@@ -25,7 +25,7 @@ DOCS = ("requirements.md", "architecture.md", "tasks.md")
 RE_HEADING = re.compile(r"^### (?P<id>[RCD]\d+)\b")
 RE_CRITERION = re.compile(r"^- \*\*(?P<id>R\d+\.AC\d+)\*\*")
 RE_QUESTION = re.compile(r"^\s*- \*\*(?P<id>Q\d+)\*\*(?P<rest>.*)$")
-RE_TASK = re.compile(r"^- \[(?P<box>[ x])\] \*\*(?P<id>T\d+)\*\*(?P<rest>.*)$")
+RE_TASK = re.compile(r"^- \[(?P<box>[ xX])\] \*\*(?P<id>T\d+)\*\*(?P<rest>.*)$")
 RE_PHASE = re.compile(r"^## (?P<name>Phase .+?)\s*$")
 RE_STATUS = re.compile(r"^\s*status: (?P<value>dropped|answered)\b")
 RE_COVERS = re.compile(r"covers: *(?P<ids>.+?)\s*$")
@@ -59,14 +59,41 @@ class Spec:
     missing: tuple[str, ...]  # documents that do not exist
 
 
+# A standalone `status:` line belongs to a heading. Criteria, tasks and
+# questions carry their status inline, on the id's own line.
+HEADING_KINDS = frozenset({"requirement", "component", "decision"})
+
+
 def _ids(text: str) -> tuple[str, ...]:
     return tuple(RE_ID.findall(text))
 
 
 def _with_status(items: list[Item], value: str) -> None:
-    """Attach a standalone `status:` line to the item it follows."""
-    if items:
+    """Attach a standalone `status:` line to the heading it sits under.
+
+    Only when that heading is the last thing declared. A marker written below
+    a heading's criteria would otherwise land on the final criterion, marking
+    the wrong id dropped and leaving the real one live — which check 7 then
+    reads exactly backwards.
+    """
+    if items and items[-1].kind in HEADING_KINDS:
         items[-1] = replace(items[-1], status=value)
+
+
+def _question(match: re.Match, doc: str, lineno: int) -> Item:
+    """A question's answer marker is inline or it does not count.
+
+    FORMAT.md pins it to the id's own line, because the check is line-based
+    and a marker that wrapped onto line two reads as unanswered.
+    """
+    marker = RE_STATUS.match(match.group("rest").lstrip())
+    return Item(
+        match.group("id"),
+        "question",
+        doc,
+        lineno,
+        status=marker.group("value") if marker else "",
+    )
 
 
 def parse_requirements(text: str) -> Iterator[Item]:
@@ -83,16 +110,7 @@ def parse_requirements(text: str) -> Iterator[Item]:
             continue
         question = RE_QUESTION.match(line)
         if question:
-            marker = RE_STATUS.match(question.group("rest").lstrip())
-            items.append(
-                Item(
-                    question.group("id"),
-                    "question",
-                    doc,
-                    lineno,
-                    status=marker.group("value") if marker else "",
-                )
-            )
+            items.append(_question(question, doc, lineno))
             continue
         status = RE_STATUS.match(line)
         if status:
@@ -118,6 +136,12 @@ def parse_architecture(text: str) -> Iterator[Item]:
                 )
             )
             continue
+        question = RE_QUESTION.match(line)
+        if question:
+            # FORMAT.md's id table puts Q<n> in any document, and a question
+            # recorded here is exactly the kind that blocks the next phase.
+            items.append(_question(question, doc, lineno))
+            continue
         status = RE_STATUS.match(line)
         if status:
             _with_status(items, status.group("value"))
@@ -132,7 +156,7 @@ def parse_tasks(text: str) -> Iterator[Item]:
         if task:
             rest = task.group("rest")
             _, _, cited = rest.partition("→")
-            flags = {"done"} if task.group("box") == "x" else set()
+            flags = {"done"} if task.group("box").lower() == "x" else set()
             if cited.strip().startswith("chore"):
                 flags.add("chore")
             items.append(
@@ -222,7 +246,7 @@ CHECK_REQUIRES: dict[int, tuple[str, ...]] = {
     7: (),  # so are references to something already dropped
     8: ("tasks.md",),
     9: ("tasks.md",),
-    10: ("requirements.md",),
+    10: (),  # questions are declared in whatever documents exist
     11: ("tasks.md",),
     12: ("tasks.md",),
 }
@@ -311,8 +335,12 @@ def exit_code(findings: Sequence[Finding], spec: Spec) -> int:
 
 
 def resolve(target: str) -> Path | None:
-    """Accept a slug under .blueprint/, or a path to a feature directory."""
-    for candidate in (Path(target), Path(".blueprint") / target):
+    """Accept a slug under .blueprint/, or a path to a feature directory.
+
+    The slug wins. Otherwise a directory in the working tree that happens to
+    share a feature's name would shadow the feature itself.
+    """
+    for candidate in (Path(".blueprint") / target, Path(target)):
         if candidate.is_dir():
             return candidate
     return None
@@ -338,8 +366,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     try:
         spec = parse_feature(root)
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
+        # A document saved as cp1252 by an editor must not crash into exit 1,
+        # which a caller reads as "found failures" rather than "did not check".
         print(f"blueprint_inspect: cannot read {root} -- did not check: {exc}", file=sys.stderr)
+        return 2
+
+    if len(spec.missing) == len(DOCS):
+        print(
+            f"blueprint_inspect: {root} holds no Blueprint documents -- did not check",
+            file=sys.stderr,
+        )
         return 2
 
     findings = run_checks(spec)

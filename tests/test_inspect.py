@@ -304,6 +304,58 @@ def test_absent_documents_skip_their_checks_instead_of_failing_them() -> None:
     assert bi.skipped_checks(complete) == (), bi.skipped_checks(complete)
 
 
+def test_an_uppercase_checkbox_is_still_a_task() -> None:
+    """Editors' toggle-checkbox commands write [X]. GFM accepts it."""
+    parsed = list(bi.parse_tasks("## Phase 1 — X\n- [X] **T1** Do it → C1 | R1.AC1\n"))
+    assert [i.id for i in parsed] == ["T1"], "an uppercase box made the task vanish"
+    assert "done" in parsed[0].flags, parsed[0].flags
+
+
+def test_a_wrapped_answer_marker_reads_as_unanswered() -> None:
+    """FORMAT.md pins the marker to the id's own line, so this must not count."""
+    doc = "## Open questions\n- **Q1** Is this settled?\n  status: answered — yes\n"
+    question = next(i for i in bi.parse_requirements(doc) if i.id == "Q1")
+    assert question.status == "", "a wrapped marker was accepted as an answer"
+
+
+def test_a_misplaced_drop_marker_does_not_land_on_a_criterion() -> None:
+    doc = "### R1 — First\n- **R1.AC1** a\n- **R1.AC2** b\nstatus: dropped — superseded\n"
+    parsed = {i.id: i for i in bi.parse_requirements(doc)}
+    assert parsed["R1.AC2"].status == "", "a drop marker landed on the wrong id"
+
+
+def test_questions_are_found_wherever_they_are_declared() -> None:
+    parsed = list(bi.parse_architecture("## Open questions\n- **Q3** Unresolved?\n"))
+    assert [i.id for i in parsed] == ["Q3"], "a question in architecture.md was invisible"
+    assert 10 not in bi.CHECK_REQUIRES[10], "check 10 must not be pinned to one document"
+
+
+def test_a_directory_that_is_not_a_feature_is_not_a_pass() -> None:
+    err = io.StringIO()
+    with tempfile.TemporaryDirectory() as tmp:
+        empty = Path(tmp) / "not-a-feature"
+        empty.mkdir()
+        with contextlib.redirect_stderr(err):
+            code = bi.main([str(empty)])
+    assert code == 2, f"a directory with no documents must exit 2, got {code}"
+    assert "did not check" in err.getvalue(), err.getvalue()
+
+
+def test_an_undecodable_document_is_not_a_failure() -> None:
+    """cp1252 is what a Windows editor writes. It must not read as exit 1."""
+    err = io.StringIO()
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "mis-encoded"
+        root.mkdir()
+        (root / "requirements.md").write_bytes(
+            "### R1 — First\n- **R1.AC1** The system SHALL work.\n".encode("cp1252")
+        )
+        with contextlib.redirect_stderr(err):
+            code = bi.main([str(root)])
+    assert code == 2, f"an unreadable document must exit 2, not {code}"
+    assert "did not check" in err.getvalue(), err.getvalue()
+
+
 def test_report_survives_a_narrow_console() -> None:
     """The hook and CI pipe this through whatever encoding the machine has.
 
