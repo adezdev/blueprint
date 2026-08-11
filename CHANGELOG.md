@@ -41,6 +41,14 @@ The version here tracks `.claude-plugin/plugin.json`.
   the reason recorded in `## Approach`. Components are units of responsibility;
   splitting a small module to satisfy a one-to-one rule produces files that
   exist only to import each other.
+- `/blueprint:inspect` check 2 accepts criterion-level coverage: a requirement
+  is covered when every one of its criteria is, not only when its own id
+  appears in a `covers:` list. The strict reading reported a failure for a
+  requirement whose single criterion was covered.
+- `/blueprint:inspect` reads declarations rather than token occurrences.
+  Blueprint's documents describe Blueprint's own grammar, so `files:` and
+  `status: dropped` appear inside ordinary prose; a marker counts only at the
+  start of its line in the document that owns it.
 
 ## [0.1.0] - 2026-08-11
 

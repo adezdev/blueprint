@@ -33,7 +33,7 @@ rg -n 'status: dropped'        requirements.md architecture.md tasks.md
 | # | Check | Severity |
 |---|---|---|
 | 1 | Every `R<n>` has ≥1 AC | fail |
-| 2 | Every `R<n>` appears in ≥1 component `covers:` | fail |
+| 2 | Every `R<n>` is covered — named directly in a `covers:` list, or every one of its criteria is | fail |
 | 3 | Every `R<n>.AC<m>` is cited by ≥1 task | fail |
 | 4 | Every `C<n>` is cited by ≥1 task | fail |
 | 5 | Every id cited anywhere actually exists (no dangling refs) | fail |
@@ -47,6 +47,13 @@ rg -n 'status: dropped'        requirements.md architecture.md tasks.md
 
 If a document is missing, report which step has not run yet and stop — do not
 report 40 failures because architecture.md does not exist.
+
+Read declarations, not token occurrences. These documents describe Blueprint's
+own grammar, so `files:`, `status: dropped` and `covers:` all turn up inside
+ordinary prose. A marker counts only where the format puts it: at the start of
+its line, in the document that owns it. A phantom id lifted out of a sentence
+is worse than a missed one, because it sends the reader hunting for something
+that was never declared.
 
 ## Output
 
