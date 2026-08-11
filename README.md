@@ -1,65 +1,65 @@
 # Blueprint
 
-Spec-driven development for Claude Code, with the traceability actually
-enforced. A rough plan becomes requirements, then an architecture, then a task
-list — and every task can name the component and the acceptance criterion it
-exists to satisfy. Then it builds them, one reviewable commit at a time.
+Runs an agent through the SDLC in the order the SDLC actually goes, and keeps
+the STLC bolted to it. Requirements before design, design before tasks, tasks
+before code — and a traceability matrix that proves nothing fell out between
+the phases.
+
+## The mindset
+
+An agent handed a plan will write code. That skips requirements analysis and
+design, so nobody can answer the two questions that matter later: *why does
+this code exist*, and *what proves it works*. Blueprint refuses to skip.
+
+**SDLC** — each phase produces an artifact the next phase consumes, and only
+that artifact. `/blueprint:architecture` designs from `requirements.md`, not
+from the original chat. Phase gates are real: unanswered open questions stop
+the next phase from starting.
+
+**STLC** — testing is not a phase at the end. Acceptance criteria are written
+in EARS during requirements analysis, which makes them the test basis. Every
+task cites the criteria it satisfies and carries the command that proves it.
+`/blueprint:inspect` is the requirements traceability matrix: every
+requirement reaches a component, every criterion reaches a test.
+
+**Verification, not vibes.** A box is ticked when a command exits zero. If
+implementation contradicts the design, the agent stops and amends the
+document rather than quietly diverging — otherwise the spec becomes a lie and
+the traceability is worthless.
+
+## Phases
+
+| SDLC / STLC phase | Command | Artifact |
+|---|---|---|
+| Requirements analysis + test basis | `/blueprint:requirements [slug]` | `requirements.md` — `R1`, EARS criteria `R1.AC1`, explicit out-of-scope, open questions it refuses to guess at |
+| System design | `/blueprint:architecture [slug]` | `architecture.md` — components `C1` with real interfaces, each declaring `covers: R1, R2` |
+| Work breakdown + test design | `/blueprint:tasks [slug]` | `tasks.md` — commit-sized `T1 → C1 \| R1.AC1`, each with a runnable `done-when` |
+| Traceability review | `/blueprint:inspect [slug]` | Report — orphan requirements, uncovered criteria, dangling ids. Read-only |
+| Implementation + test execution | `/blueprint:build [slug\|T<n>]` | Code, passing check, ticked box; `/code-review` and a PR at phase close |
+
+Artifacts live in `.blueprint/<feature-slug>/`, in the repo, so the spec
+reviews in the same pull request as the code it produced.
 
 Markdown is the only source of truth. Machine-readability comes from stable
-IDs (`R1`, `R1.AC2`, `C3`, `T7`), not a parallel JSON file that drifts.
-
-## Flow
-
-```
-plan.md ──/blueprint:requirements──▶ requirements.md   R1, R1.AC1 …
-                                          │
-        ──/blueprint:architecture──▶ architecture.md   C1 covers: R1, R2
-                                          │
-        ──/blueprint:tasks────────▶ tasks.md           T1 → C1 | R1.AC1
-                                          │
-        ──/blueprint:inspect──────▶ chain validated
-                                          │
-        ──/blueprint:build────────▶ code, test, ✓, review, PR
-```
-
-## Skills
-
-| Command | Does |
-|---|---|
-| `/blueprint:requirements [slug]` | Plan → `requirements.md`. R-ids, EARS acceptance criteria, explicit out-of-scope, open questions it refuses to guess at. |
-| `/blueprint:architecture [slug]` | Requirements → `architecture.md`. Components with real interfaces, each declaring the requirements it covers. |
-| `/blueprint:tasks [slug]` | Architecture → `tasks.md`. Commit-sized tasks in shippable phases, each with a runnable `done-when`. |
-| `/blueprint:inspect [slug]` | Validates the chain: orphan requirements, uncovered criteria, dangling ids, components nothing builds. Read-only. |
-| `/blueprint:build [slug\|T<n>]` | Executes one task. Reads only what that task cites, makes the change, proves it, ticks the box. Reviews and opens a PR at phase close. |
-
-## Layout
-
-```
-.blueprint/<feature-slug>/
-  plan.md            # your input. optional — the conversation can be the plan.
-  requirements.md
-  architecture.md
-  tasks.md
-```
-
-Lives in the repo, so the spec reviews in the same PR as the code.
-
-## Format
-
-`FORMAT.md` is the contract all five skills read. Change it there and every
-skill follows.
+ids (`R1`, `R1.AC2`, `C3`, `T7`), not a parallel data file that drifts.
+`FORMAT.md` is the contract all five skills read.
 
 ## Install
+
+```
+/plugin marketplace add adezdev/blueprint
+/plugin install blueprint@blueprint
+```
+
+From a local clone, point the first command at the directory instead:
 
 ```
 /plugin marketplace add /path/to/blueprint
 /plugin install blueprint@blueprint
 ```
 
-## Why the chain matters
+Then start a feature — the conversation itself can be the plan:
 
-Three documents with nothing checking them is a waterfall with extra steps.
-The ids are what make it not that: `/blueprint:inspect` can prove that no
-requirement was quietly dropped and no task was quietly invented, and
-`/blueprint:build` can load one component instead of the whole spec — which
-is what keeps the diff small enough to actually review.
+```
+/blueprint:requirements token-refresh
+```
