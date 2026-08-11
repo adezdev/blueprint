@@ -6,6 +6,9 @@ place to start.
 
 from __future__ import annotations
 
+import ast
+import contextlib
+import io
 import sys
 import tempfile
 from pathlib import Path
@@ -193,6 +196,101 @@ def test_parse_feature() -> None:
             "T2",
             "T3",
         ], [i.id for i in spec.items]
+
+
+FAILURE = bi.Finding(2, "fail", "R4", "requirements.md", 64, "covered by no component", "add a component or drop it")
+WARNING = bi.Finding(9, "warn", "T5", "tasks.md", 31, "has no files: line")
+
+
+def feature_dir(tmp: str, name: str = "sample-feature") -> Path:
+    root = Path(tmp) / name
+    root.mkdir()
+    (root / "requirements.md").write_text(REQUIREMENTS, encoding="utf-8")
+    (root / "architecture.md").write_text(ARCHITECTURE, encoding="utf-8")
+    (root / "tasks.md").write_text(TASKS, encoding="utf-8")
+    return root
+
+
+def test_exit_code_blocks_on_failures_only() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        spec = bi.parse_feature(feature_dir(tmp))
+    assert bi.exit_code([], spec) == 0, "clean run must exit 0"
+    assert bi.exit_code([WARNING], spec) == 0, "warnings alone must exit 0"
+    assert bi.exit_code([WARNING, FAILURE], spec) == 1, "a failure must exit non-zero"
+
+
+def test_render_locates_every_finding() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        spec = bi.parse_feature(feature_dir(tmp))
+    report = bi.render(spec, [FAILURE, WARNING])
+
+    fail_line = next(line for line in report.splitlines() if "FAIL" in line)
+    for fragment in ("[2]", "R4", "requirements.md:64", "covered by no component"):
+        assert fragment in fail_line, f"{fragment!r} missing from: {fail_line!r}"
+    assert "add a component or drop it" in fail_line, fail_line
+
+    warn_line = next(line for line in report.splitlines() if "WARN" in line)
+    for fragment in ("[9]", "T5", "tasks.md:31"):
+        assert fragment in warn_line, f"{fragment!r} missing from: {warn_line!r}"
+
+    assert "1 failure, 1 warning." in report, report
+
+
+def test_render_reports_what_it_examined() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        spec = bi.parse_feature(feature_dir(tmp))
+    report = bi.render(spec, [])
+
+    assert "2 R, 3 AC, 2 Q" in report, report
+    assert "2 C, 1 D" in report, report
+    assert "3 T, 2 phases" in report, report
+    assert "0 failures, 0 warnings." in report, report
+
+
+def test_main_reports_when_it_did_not_check() -> None:
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        code = bi.main(["no-such-feature-anywhere"])
+    assert code == 2, f"unreadable feature must exit 2, got {code}"
+    assert "did not check" in err.getvalue(), err.getvalue()
+
+
+def test_main_runs_end_to_end() -> None:
+    out = io.StringIO()
+    with tempfile.TemporaryDirectory() as tmp:
+        root = feature_dir(tmp)
+        with contextlib.redirect_stdout(out):
+            code = bi.main([str(root)])
+    assert code == 0, f"a feature with no checks run must exit 0, got {code}"
+    assert "Blueprint: sample-feature" in out.getvalue(), out.getvalue()
+
+
+def test_report_survives_a_narrow_console() -> None:
+    """The hook and CI pipe this through whatever encoding the machine has.
+
+    An em dash in the report raises UnicodeEncodeError on a cp1252 pipe, which
+    turns "here are your findings" into a crash.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        spec = bi.parse_feature(feature_dir(tmp))
+    report = bi.render(spec, [FAILURE, WARNING])
+    try:
+        report.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise AssertionError(f"report is not ascii-safe: {exc}") from None
+
+
+def test_imports_only_the_standard_library() -> None:
+    source = Path(bi.__file__).read_text(encoding="utf-8")
+    roots = set()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            roots.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            roots.add(node.module.split(".")[0])
+    assert roots, "found no imports at all — the scan is broken, not the module"
+    outside = sorted(root for root in roots if root not in sys.stdlib_module_names)
+    assert not outside, f"non-stdlib imports would break the no-toolchain guarantee: {outside}"
 
 
 def main() -> int:

@@ -13,10 +13,12 @@ something that does not exist.
 
 from __future__ import annotations
 
+import argparse
 import re
+import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Sequence
 
 DOCS = ("requirements.md", "architecture.md", "tasks.md")
 
@@ -185,3 +187,106 @@ def parse_feature(root: Path) -> Spec:
         phases=tuple(phases),
         missing=missing,
     )
+
+
+@dataclass(frozen=True)
+class Finding:
+    """One violation, at the place a reader can go and look at it."""
+
+    check: int  # 1..12, matching the table in the inspect skill
+    severity: str  # "fail" | "warn"
+    id: str
+    doc: str
+    line: int
+    message: str
+    fix: str = ""  # the cheapest repair, a few words
+
+
+KINDS = ("requirement", "criterion", "question", "component", "decision", "task")
+
+
+def counts(spec: Spec) -> dict[str, int]:
+    tally = dict.fromkeys(KINDS, 0)
+    for item in spec.items:
+        tally[item.kind] += 1
+    return tally
+
+
+def _plural(count: int, noun: str) -> str:
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def render(spec: Spec, findings: Sequence[Finding]) -> str:
+    """The whole report, as text a person reads and a machine can grep."""
+    tally = counts(spec)
+    lines = [
+        f"Blueprint: {spec.slug}",
+        "",
+        f"  requirements   {tally['requirement']} R, {tally['criterion']} AC, "
+        f"{tally['question']} Q",
+        f"  architecture   {tally['component']} C, {tally['decision']} D",
+        f"  tasks          {tally['task']} T, {len(spec.phases)} phases",
+        "",
+    ]
+    for finding in findings:
+        label = "FAIL" if finding.severity == "fail" else "WARN"
+        line = (
+            f"  {label}  [{finding.check}]  {finding.id}  "
+            f"{finding.doc}:{finding.line}  {finding.message}"
+        )
+        if finding.fix:
+            line += f" -- {finding.fix}"
+        lines.append(line)
+    if findings:
+        lines.append("")
+    failures = sum(1 for finding in findings if finding.severity == "fail")
+    warnings = len(findings) - failures
+    lines.append(f"  {_plural(failures, 'failure')}, {_plural(warnings, 'warning')}.")
+    return "\n".join(lines)
+
+
+def exit_code(findings: Sequence[Finding], spec: Spec) -> int:
+    """Failures are worth blocking on. Warnings are not."""
+    del spec  # part of the declared contract; nothing needs it yet
+    return 1 if any(finding.severity == "fail" for finding in findings) else 0
+
+
+def resolve(target: str) -> Path | None:
+    """Accept a slug under .blueprint/, or a path to a feature directory."""
+    for candidate in (Path(target), Path(".blueprint") / target):
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="blueprint_inspect",
+        description="Validate a Blueprint feature's traceability chain.",
+    )
+    parser.add_argument(
+        "feature",
+        help="feature slug under .blueprint/, or a path to a feature directory",
+    )
+    args = parser.parse_args(argv)
+
+    root = resolve(args.feature)
+    if root is None:
+        print(
+            f"blueprint_inspect: no feature directory for {args.feature!r} -- did not check",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        spec = parse_feature(root)
+    except OSError as exc:
+        print(f"blueprint_inspect: cannot read {root} -- did not check: {exc}", file=sys.stderr)
+        return 2
+
+    findings: tuple[Finding, ...] = ()  # the checks themselves arrive in phase 2
+    print(render(spec, findings))
+    return exit_code(findings, spec)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

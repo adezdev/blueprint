@@ -17,7 +17,7 @@ yet, so it cannot fail anything — but nothing lies either.
       doc, line, refs and status for every item parsed from an inline
       document held in the test
 
-- [ ] **T2** Render findings and translate them to an exit status → C3 | R3.AC2, R3.AC3, R5.AC1, R6.AC1, R6.AC2, R6.AC3  (after T1)
+- [x] **T2** Render findings and translate them to an exit status → C3 | R3.AC2, R3.AC3, R5.AC1, R6.AC1, R6.AC2, R6.AC3  (after T1)
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting exit 0 with
       no findings, 0 with warnings only, 1 with a failure, 2 for an unreadable
