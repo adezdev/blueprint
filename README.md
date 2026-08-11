@@ -95,3 +95,7 @@ From a local clone, point the first command at the directory instead.
 ```
 /blueprint:requirements token-refresh
 ```
+
+## License
+
+MIT. See [CHANGELOG.md](CHANGELOG.md) for what changed when.
