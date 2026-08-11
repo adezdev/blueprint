@@ -1,0 +1,54 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Manifests parse as JSON
+        run: |
+          jq empty .claude-plugin/plugin.json
+          jq empty .claude-plugin/marketplace.json
+
+      - name: Plugin version matches the changelog
+        run: |
+          plugin=$(jq -r .version .claude-plugin/plugin.json)
+          logged=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '#[] ')
+          echo "plugin.json: $plugin   CHANGELOG.md: $logged"
+          if [ "$plugin" != "$logged" ]; then
+            echo "::error::version drift — bump both together"
+            exit 1
+          fi
+
+      - name: Skills are loadable
+        run: |
+          status=0
+          for dir in skills/*/; do
+            name=$(basename "$dir")
+            file="${dir}SKILL.md"
+            if [ ! -f "$file" ]; then
+              echo "::error::$dir has no SKILL.md"
+              status=1
+              continue
+            fi
+            if [ "$(head -1 "$file")" != "---" ]; then
+              echo "::error::$file does not open with frontmatter"
+              status=1
+            fi
+            declared=$(sed -n 's/^name: *//p' "$file" | head -1)
+            if [ "$declared" != "$name" ]; then
+              echo "::error::$file declares name '$declared', directory is '$name'"
+              status=1
+            fi
+            if ! sed -n 's/^description: *//p' "$file" | head -1 | grep -q .; then
+              echo "::error::$file has no description, so it will never autoload"
+              status=1
+            fi
+          done
+          exit $status

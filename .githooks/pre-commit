@@ -1,0 +1,15 @@
+#!/bin/sh
+# Blocks a user-visible change that ships without a changelog entry.
+# Enable with: git config core.hooksPath .githooks
+
+staged=$(git diff --cached --name-only --diff-filter=ACMRD)
+
+# Nothing user-visible changed.
+printf '%s\n' "$staged" | grep -Eq '^(skills/|FORMAT\.md$|\.claude-plugin/)' || exit 0
+
+# Changelog came along for the ride.
+printf '%s\n' "$staged" | grep -qx 'CHANGELOG\.md' && exit 0
+
+echo "pre-commit: skills/, FORMAT.md or .claude-plugin/ changed, CHANGELOG.md did not."
+echo "  Add an entry under '## [Unreleased]', or bypass with --no-verify."
+exit 1

@@ -1,0 +1,36 @@
+#!/bin/sh
+# Enforces Conventional Commits and blocks Co-Authored-By trailers.
+# Enable with: git config core.hooksPath .githooks
+
+msg_file="$1"
+subject=$(sed -n '1p' "$msg_file")
+types='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+
+# Let git's own generated subjects through.
+case "$subject" in
+	'Merge '*|'Revert "'*|fixup!*|squash!*) exit 0 ;;
+esac
+
+if ! printf '%s' "$subject" | grep -Eq "^($types)(\([a-z0-9._/-]+\))?!?: [a-z].+"; then
+	echo "commit-msg: subject must be '<type>: <lowercase summary>'"
+	echo "  types: $types"
+	echo "  got:   $subject"
+	exit 1
+fi
+
+case "$subject" in
+*.)
+	echo "commit-msg: subject must not end with a period"
+	exit 1
+	;;
+esac
+
+if [ ${#subject} -gt 72 ]; then
+	echo "commit-msg: subject is ${#subject} chars, keep it under 72"
+	exit 1
+fi
+
+if grep -qi '^Co-Authored-By:' "$msg_file"; then
+	echo "commit-msg: this repo does not use Co-Authored-By trailers"
+	exit 1
+fi

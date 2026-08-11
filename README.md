@@ -96,6 +96,18 @@ From a local clone, point the first command at the directory instead.
 /blueprint:requirements token-refresh
 ```
 
+## Contributing
+
+Turn on the hooks once per clone:
+
+```
+git config core.hooksPath .githooks
+```
+
+`commit-msg` enforces Conventional Commits. `pre-commit` blocks a change to
+`skills/`, `FORMAT.md` or `.claude-plugin/` that forgets `CHANGELOG.md`. CI
+checks the manifests parse and that every skill still loads.
+
 ## License
 
 MIT. See [CHANGELOG.md](CHANGELOG.md) for what changed when.

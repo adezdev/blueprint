@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The version here tracks `.claude-plugin/plugin.json`.
 
+## [Unreleased]
+
+### Added
+
+- `.githooks/commit-msg` — rejects subjects that are not Conventional Commits
+  and blocks `Co-Authored-By` trailers.
+- `.githooks/pre-commit` — blocks a change to `skills/`, `FORMAT.md` or
+  `.claude-plugin/` that ships without a changelog entry.
+- `.github/workflows/validate.yml` — checks the manifests parse, the plugin
+  version matches the changelog, and every skill has a directory name and
+  description that will actually load.
+- `.github/PULL_REQUEST_TEMPLATE.md`.
+
 ## [0.1.0] - 2026-08-11
 
 ### Added
