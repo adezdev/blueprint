@@ -34,11 +34,15 @@ yet, so it cannot fail anything — but nothing lies either.
       was moving `Finding` to C3, which would have made C2 depend on C3 to
       produce what C3 depends on C2 to receive.
 
-- [ ] **T3** Report an absent document as a phase not yet run → C2 | R4.AC1  (after T2)
+- [x] **T3** Report an absent document as a phase not yet run → C2 | R4.AC1  (after T2)
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting a feature
       holding only `requirements.md` names the architecture phase as not run,
       emits no dangling-reference findings, and exits 0
+
+      Added the not-run lines to `render`, which belongs to C3. Deciding
+      which checks are skipped is C2's; saying so on stdout is C3's, and the
+      criterion needs both. Recorded rather than split into two tasks.
 
 ## Phase 2 — The twelve checks
 

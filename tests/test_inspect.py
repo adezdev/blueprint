@@ -265,6 +265,45 @@ def test_main_runs_end_to_end() -> None:
     assert "Blueprint: sample-feature" in out.getvalue(), out.getvalue()
 
 
+def partial_feature(tmp: str) -> Path:
+    """A feature that has had requirements written and nothing else."""
+    root = Path(tmp) / "half-done"
+    root.mkdir()
+    (root / "requirements.md").write_text(REQUIREMENTS, encoding="utf-8")
+    return root
+
+
+def test_absent_documents_name_the_phase_that_has_not_run() -> None:
+    out = io.StringIO()
+    with tempfile.TemporaryDirectory() as tmp:
+        root = partial_feature(tmp)
+        with contextlib.redirect_stdout(out):
+            code = bi.main([str(root)])
+    report = out.getvalue()
+
+    assert code == 0, f"an unfinished feature is incomplete, not broken; got {code}"
+    assert "the architecture phase -- architecture.md does not exist" in report, report
+    assert "the tasks phase -- tasks.md does not exist" in report, report
+
+
+def test_absent_documents_skip_their_checks_instead_of_failing_them() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        spec = bi.parse_feature(partial_feature(tmp))
+        complete = bi.parse_feature(feature_dir(tmp))
+
+    runnable = bi.applicable_checks(spec)
+    # 5 is the dangling-reference check: every task cites a component, and with
+    # architecture.md absent every one of those would read as dangling.
+    assert 5 not in runnable, "dangling refs would be reported as a consequence of absence"
+    for number in (2, 3, 4, 8, 9, 11, 12):
+        assert number not in runnable, f"check {number} needs a document that is absent"
+    for number in (1, 6, 7, 10):
+        assert number in runnable, f"check {number} needs only requirements.md"
+
+    assert bi.applicable_checks(complete) == tuple(range(1, 13)), bi.applicable_checks(complete)
+    assert bi.skipped_checks(complete) == (), bi.skipped_checks(complete)
+
+
 def test_report_survives_a_narrow_console() -> None:
     """The hook and CI pipe this through whatever encoding the machine has.
 

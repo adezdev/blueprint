@@ -202,6 +202,58 @@ class Finding:
     fix: str = ""  # the cheapest repair, a few words
 
 
+PHASE_OF = {
+    "requirements.md": "requirements",
+    "architecture.md": "architecture",
+    "tasks.md": "tasks",
+}
+
+# Which documents a check cannot run without. A check whose inputs are absent
+# is skipped, not failed: a feature that has not reached the architecture
+# phase is incomplete, not broken, and reporting forty dangling references
+# because architecture.md does not exist yet tells the reader nothing.
+CHECK_REQUIRES: dict[int, tuple[str, ...]] = {
+    1: ("requirements.md",),
+    2: ("requirements.md", "architecture.md"),
+    3: ("requirements.md", "tasks.md"),
+    4: ("architecture.md", "tasks.md"),
+    5: DOCS,
+    6: (),  # duplicates are real within whatever is present
+    7: (),  # so are references to something already dropped
+    8: ("tasks.md",),
+    9: ("tasks.md",),
+    10: ("requirements.md",),
+    11: ("tasks.md",),
+    12: ("tasks.md",),
+}
+
+# Populated in phase 2, one entry per check, in check order.
+CHECKS: tuple = ()
+
+
+def applicable_checks(spec: Spec) -> tuple[int, ...]:
+    """The checks whose inputs are all present."""
+    return tuple(
+        number
+        for number, required in sorted(CHECK_REQUIRES.items())
+        if not any(doc in spec.missing for doc in required)
+    )
+
+
+def skipped_checks(spec: Spec) -> tuple[int, ...]:
+    runnable = set(applicable_checks(spec))
+    return tuple(number for number in sorted(CHECK_REQUIRES) if number not in runnable)
+
+
+def run_checks(spec: Spec) -> tuple[Finding, ...]:
+    runnable = set(applicable_checks(spec))
+    findings: list[Finding] = []
+    for number, check in enumerate(CHECKS, 1):
+        if number in runnable:
+            findings.extend(check(spec))
+    return tuple(findings)
+
+
 KINDS = ("requirement", "criterion", "question", "component", "decision", "task")
 
 
@@ -228,6 +280,13 @@ def render(spec: Spec, findings: Sequence[Finding]) -> str:
         f"  tasks          {tally['task']} T, {len(spec.phases)} phases",
         "",
     ]
+    for doc in spec.missing:
+        lines.append(f"  not run   the {PHASE_OF[doc]} phase -- {doc} does not exist")
+    if spec.missing:
+        skipped = skipped_checks(spec)
+        listed = ", ".join(str(number) for number in skipped)
+        lines.append(f"            {_plural(len(skipped), 'check')} skipped: {listed}")
+        lines.append("")
     for finding in findings:
         label = "FAIL" if finding.severity == "fail" else "WARN"
         line = (
@@ -283,7 +342,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"blueprint_inspect: cannot read {root} -- did not check: {exc}", file=sys.stderr)
         return 2
 
-    findings: tuple[Finding, ...] = ()  # the checks themselves arrive in phase 2
+    findings = run_checks(spec)
     print(render(spec, findings))
     return exit_code(findings, spec)
 
