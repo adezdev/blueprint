@@ -15,8 +15,10 @@ grammar and the exact document shape. Do not improvise a variant.
 from the single existing `.blueprint/*/requirements.md`, or ask.
 
 Stop before you start if `## Open questions` still has unanswered `Q<n>`
-items. Surface them and ask. Designing around an unresolved question produces
-a component that gets deleted.
+items — unanswered meaning no `status: answered` on the line. Surface them
+and ask, then have `/blueprint:requirements` record the answers before you
+design. Designing around an unresolved question produces a component that
+gets deleted.
 
 ## What you do
 

@@ -22,6 +22,19 @@ The version here tracks `.claude-plugin/plugin.json`.
 - `CONTRIBUTING.md` — setup, how to test a skill change, commit and changelog
   rules, and the release steps.
 
+### Changed
+
+- `status: answered — <the answer>` now marks a resolved open question, so an
+  answer that was only ever spoken is written down where the next phase can
+  read it. `/blueprint:requirements` records answers and folds their
+  consequences into the document; `/blueprint:architecture` and
+  `/blueprint:inspect` read the marker instead of guessing.
+- Requirements may now name a *category* of dependency where portability or
+  operability is itself the requirement — never a product. Previously the
+  no-implementation-nouns rule had no room for non-functional requirements.
+- `FORMAT.md` states that `.blueprint/` lives at the root of the repository
+  being built, including when that repository is Blueprint itself.
+
 ## [0.1.0] - 2026-08-11
 
 ### Added

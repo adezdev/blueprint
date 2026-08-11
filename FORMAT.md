@@ -16,6 +16,9 @@ source of truth. Machine-readability comes from stable IDs, not a second file.
 One directory per feature. Slug is kebab-case, short: `token-refresh`, not
 `implement-the-token-refresh-flow`.
 
+`.blueprint/` sits at the root of the repository being built — including when
+that repository is Blueprint itself.
+
 ## IDs
 
 | Prefix | Means | Lives in |
@@ -33,6 +36,11 @@ Rules:
 - Numbering gaps are normal and mean something was dropped.
 - To drop an item, keep its heading and add `status: dropped — <reason>`.
   Anything referencing it must be updated in the same pass.
+- An answered open question keeps its `Q<n>` and gains
+  `status: answered — <the answer>`, on the same line as the id and directly
+  after it. Not on a continuation line: the check is line-based, and a marker
+  that wrapped onto line two reads as unanswered. A question whose answer is
+  known but not written down blocks the next phase for no reason.
 - IDs are grep-able: `rg '^### R\d+' requirements.md`.
 
 ## requirements.md
@@ -60,6 +68,8 @@ One or two sentences of intent. Why a user wants this.
 
 ## Open questions
 - **Q1** ... (answer before `/blueprint:architecture`)
+- **Q2** status: answered — chose X on 2026-01-09, see R4
+  The question, and why it mattered, wrapped underneath.
 ```
 
 Acceptance criteria use EARS:
@@ -75,6 +85,12 @@ Acceptance criteria use EARS:
 An AC is valid only if a test could assert it from outside the system. No
 class names, no library names, no file paths in requirements.md — those are
 architecture.
+
+The exception is a non-functional requirement where the constraint *is* the
+dependency: portability, operability, a runtime that must or must not be
+present. Name the category, never the product — "SHALL run without a
+project-specific toolchain", not "SHALL run without Node". The category is
+the requirement; which product satisfies it is still architecture's call.
 
 ## architecture.md
 

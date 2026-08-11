@@ -24,6 +24,7 @@ rg -o 'covers: *(.+)$'         architecture.md   # coverage claims
 rg -o '\*\*(T\d+)\*\*'         tasks.md          # declared tasks
 rg -o '→ *(C\d+|chore) *\| *(.+)$' tasks.md      # task citations
 rg -o '\*\*(Q\d+)\*\*'         requirements.md architecture.md
+rg -n 'status: answered'       requirements.md architecture.md
 rg -n 'status: dropped'        requirements.md architecture.md tasks.md
 ```
 
@@ -40,7 +41,7 @@ rg -n 'status: dropped'        requirements.md architecture.md tasks.md
 | 7 | Nothing references an id marked `status: dropped` | fail |
 | 8 | Every task has a `done-when` line | fail |
 | 9 | Every task has a `files:` line | warn |
-| 10 | No unanswered `Q<n>` | warn |
+| 10 | No unanswered `Q<n>` — `rg '^\s*- \*\*Q\d+\*\* status: answered'` matches every declared `Q` | warn |
 | 11 | No task cites more than one `C<n>` | warn |
 | 12 | Phases exist and each has ≥1 task | warn |
 

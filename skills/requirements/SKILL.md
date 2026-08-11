@@ -51,7 +51,23 @@ Argument is a feature slug or a path. Resolve in this order:
    skill — a wrong assumption at R-level propagates through architecture and
    tasks and is not caught until the code is written.
 
-7. **Write the file** to `.blueprint/<slug>/requirements.md`.
+7. **Write the answers back.** An answer that lives only in the chat is an
+   answer the next phase cannot see. When the user settles a question, in the
+   same pass:
+   - mark it `status: answered — <the answer>`, keeping the `Q<n>`. The
+     marker goes on the same line as the id, directly after it — the check is
+     line-based, so a marker pushed onto a continuation line reads as
+     unanswered. Let the question text wrap underneath instead;
+   - fold the consequence into the document. A fixed decision becomes a
+     stated constraint under `## Scope`; a new capability becomes a new
+     `R<n>` with its own criteria.
+
+   An answered question that changed nothing in the document usually means it
+   was not blocking. Say so rather than inventing a requirement for it.
+
+8. **Write the file** to `.blueprint/<slug>/requirements.md`, at the root of
+   the repository being built — including when that repository is Blueprint
+   itself.
 
 ## Updating an existing requirements.md
 
@@ -72,7 +88,9 @@ If there are no open questions, say the spec is ready and skip the caveat.
 ## Rules
 
 - No implementation nouns in this file. No class names, no libraries, no file
-  paths, no schemas.
+  paths, no schemas. The one exception is a non-functional requirement where
+  the constraint *is* the dependency — portability, operability, a runtime
+  that must or must not be present. Name the category, never the product.
 - No AC that cannot fail. "The system SHALL be reliable" is not an AC.
 - Prefer fewer, sharper requirements. Ten R-ids for a two-day feature means
   you are describing the implementation.
