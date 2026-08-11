@@ -28,6 +28,12 @@ yet, so it cannot fail anything — but nothing lies either.
       `main` accepts either a slug under `.blueprint/` or a directory path, so
       fixtures can be checked without living in `.blueprint/`.
 
+      Introduced the `Finding` shape, which C2 owns, because rendering cannot
+      be written or tested without it and this task precedes every C2 task.
+      Declared verbatim from C2's interface, nothing added. The alternative
+      was moving `Finding` to C3, which would have made C2 depend on C3 to
+      produce what C3 depends on C2 to receive.
+
 - [ ] **T3** Report an absent document as a phase not yet run → C2 | R4.AC1  (after T2)
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting a feature
