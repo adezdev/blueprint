@@ -17,7 +17,10 @@ The version here tracks `.claude-plugin/plugin.json`.
 - `.github/workflows/validate.yml` — checks the manifests parse, the plugin
   version matches the changelog, and every skill has a directory name and
   description that will actually load.
-- `.github/PULL_REQUEST_TEMPLATE.md`.
+- `.github/PULL_REQUEST_TEMPLATE.md` and issue forms for bugs and feature
+  requests.
+- `CONTRIBUTING.md` — setup, how to test a skill change, commit and changelog
+  rules, and the release steps.
 
 ## [0.1.0] - 2026-08-11
 

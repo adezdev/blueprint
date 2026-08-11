@@ -1,0 +1,55 @@
+name: Bug report
+description: A skill did something wrong, or the documents it wrote are broken.
+labels: [bug]
+body:
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill
+      options:
+        - /blueprint:requirements
+        - /blueprint:architecture
+        - /blueprint:tasks
+        - /blueprint:inspect
+        - /blueprint:build
+        - install / plugin loading
+        - something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What the skill did, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: >
+        The command you ran and the input it read. Paste the relevant chunk of
+        requirements.md / architecture.md / tasks.md if the output was wrong —
+        the ids matter.
+      placeholder: |
+        1. /blueprint:tasks token-refresh
+        2. tasks.md came out with T4 citing C9, which does not exist
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Blueprint version
+      description: From `.claude-plugin/plugin.json`, or the release you installed.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: claude-code
+    attributes:
+      label: Claude Code version
+      placeholder: "output of `claude --version`"

@@ -1,0 +1,27 @@
+name: Feature request
+description: Something Blueprint should do and does not.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem
+      description: >
+        Describe what goes wrong today, not the solution. A requirement, not an
+        implementation — the same rule the skills follow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: Optional. If you already have a shape for it, sketch it here.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: >
+        Existing skills, hand-editing the documents, another tool. Helps judge
+        whether this needs to exist.

@@ -108,6 +108,9 @@ git config core.hooksPath .githooks
 `skills/`, `FORMAT.md` or `.claude-plugin/` that forgets `CHANGELOG.md`. CI
 checks the manifests parse and that every skill still loads.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to test a skill change and how
+releases work.
+
 ## License
 
 MIT. See [CHANGELOG.md](CHANGELOG.md) for what changed when.
