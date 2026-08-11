@@ -11,13 +11,13 @@ Ends mergeable: the script parses a feature, prints what it found, and exits
 with a status that distinguishes "clean" from "could not check". No checks
 yet, so it cannot fail anything — but nothing lies either.
 
-- [ ] **T1** Parse a feature directory into the `Spec` model → C1 | R3.AC1
+- [x] **T1** Parse a feature directory into the `Spec` model → C1 | R3.AC1
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting id, kind,
       doc, line, refs and status for every item parsed from an inline
       document held in the test
 
-- [ ] **T2** Render findings and translate them to an exit status → C3 | R3.AC2, R3.AC3, R5.AC1, R6.AC1, R6.AC2, R6.AC3  (after T1)
+- [x] **T2** Render findings and translate them to an exit status → C3 | R3.AC2, R3.AC3, R5.AC1, R6.AC1, R6.AC2, R6.AC3  (after T1)
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting exit 0 with
       no findings, 0 with warnings only, 1 with a failure, 2 for an unreadable
@@ -28,11 +28,21 @@ yet, so it cannot fail anything — but nothing lies either.
       `main` accepts either a slug under `.blueprint/` or a directory path, so
       fixtures can be checked without living in `.blueprint/`.
 
-- [ ] **T3** Report an absent document as a phase not yet run → C2 | R4.AC1  (after T2)
+      Introduced the `Finding` shape, which C2 owns, because rendering cannot
+      be written or tested without it and this task precedes every C2 task.
+      Declared verbatim from C2's interface, nothing added. The alternative
+      was moving `Finding` to C3, which would have made C2 depend on C3 to
+      produce what C3 depends on C2 to receive.
+
+- [x] **T3** Report an absent document as a phase not yet run → C2 | R4.AC1  (after T2)
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting a feature
       holding only `requirements.md` names the architecture phase as not run,
       emits no dangling-reference findings, and exits 0
+
+      Added the not-run lines to `render`, which belongs to C3. Deciding
+      which checks are skipped is C2's; saying so on stdout is C3's, and the
+      criterion needs both. Recorded rather than split into two tasks.
 
 ## Phase 2 — The twelve checks
 

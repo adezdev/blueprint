@@ -43,6 +43,15 @@ from the argument, the single existing feature directory, or ask.
 6. **Order by dependency, mark it explicitly.** `(after T1)`. Tasks with no
    `after` line are unblocked and may be done in any order.
 
+   Look for dependencies between *shapes*, not only between tasks. A task
+   often needs a type, constant or helper that its own component does not
+   declare — especially where components share a file. Read each task's
+   component interface, note what it uses but does not define, and find the
+   component that owns it. Then either order that component's task first, or
+   say in the task that it introduces the shape and which component owns it.
+   Leaving it implicit means whoever runs `/blueprint:build` hits it mid-task
+   and has to stop.
+
 7. **Cover every AC.** Before writing the file, check both directions: every
    `R<n>.AC<m>` in requirements.md is cited by at least one task, and every
    `C<n>` in architecture.md is implemented by at least one task. Report any

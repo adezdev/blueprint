@@ -22,6 +22,14 @@ components below are responsibilities within that module, not separate files
 — at roughly 300 lines, splitting parse, check and report across three
 modules would buy nothing but import statements.
 
+Because they share a file, the data shapes are declared together near the top
+rather than inside the component that owns them. Each shape is still listed
+under exactly one component's interface — `Item` and `Spec` under C1,
+`Finding` under C2, which is the component that produces them. Ownership sets
+the dependency direction: C2 and C3 both read C1, C3 reads C2, and nothing
+points back the other way. Whichever task lands first introduces the shape it
+needs, and records that it did.
+
 ## Components
 
 ### C1 — Parser    covers: R1, R3.AC1
