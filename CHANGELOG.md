@@ -34,6 +34,13 @@ The version here tracks `.claude-plugin/plugin.json`.
   no-implementation-nouns rule had no room for non-functional requirements.
 - `FORMAT.md` states that `.blueprint/` lives at the root of the repository
   being built, including when that repository is Blueprint itself.
+- `/blueprint:architecture` applies the "no *and* in a responsibility" rule to
+  the component heading, not just the responsibility line — the heading is
+  what every later citation reads.
+- `/blueprint:architecture` permits two components to name the same file, with
+  the reason recorded in `## Approach`. Components are units of responsibility;
+  splitting a small module to satisfy a one-to-one rule produces files that
+  exist only to import each other.
 
 ## [0.1.0] - 2026-08-11
 

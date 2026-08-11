@@ -34,7 +34,9 @@ gets deleted.
 3. **Cut components at responsibility boundaries.** One `### C<n>` per unit
    with a single responsibility, a named file, and a concrete interface —
    real signatures, not prose. If a component's responsibility needs the word
-   "and", split it.
+   "and", split it. That applies to the heading too: a name like "Model and
+   parser" describes two things even when the responsibility line underneath
+   describes one, and the heading is what every later citation reads.
 
 4. **Declare coverage on every component heading:** `covers: R1, R2.AC3`.
    Then verify the other direction: every requirement in requirements.md must
@@ -78,6 +80,11 @@ are not?), any new dependency you are proposing, and the top risk. Then:
 ## Rules
 
 - Every component names its files. "The auth layer" is not a component.
+- Two components may name the same file. Components are units of
+  responsibility, not units of filesystem — splitting a small module three
+  ways to satisfy a one-to-one rule produces files that exist only to import
+  each other. When components share a file, say why in `## Approach`. What
+  they may never share is a responsibility.
 - Interfaces are code, not description.
 - No component without a `covers:` list. If it covers nothing, it should not
   exist.
