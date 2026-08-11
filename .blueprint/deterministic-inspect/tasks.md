@@ -11,7 +11,7 @@ Ends mergeable: the script parses a feature, prints what it found, and exits
 with a status that distinguishes "clean" from "could not check". No checks
 yet, so it cannot fail anything — but nothing lies either.
 
-- [ ] **T1** Parse a feature directory into the `Spec` model → C1 | R3.AC1
+- [x] **T1** Parse a feature directory into the `Spec` model → C1 | R3.AC1
       files: `scripts/blueprint_inspect.py`, `tests/test_inspect.py`
       done-when: `python tests/test_inspect.py` passes, asserting id, kind,
       doc, line, refs and status for every item parsed from an inline
