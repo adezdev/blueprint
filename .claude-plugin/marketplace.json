@@ -1,0 +1,13 @@
+{
+  "name": "blueprint",
+  "owner": {
+    "name": "adezdev"
+  },
+  "plugins": [
+    {
+      "name": "blueprint",
+      "source": "./",
+      "description": "Traceable spec-driven development: plan → requirements → architecture → tasks → focused change → review → PR."
+    }
+  ]
+}

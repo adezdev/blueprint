@@ -1,0 +1,8 @@
+{
+  "name": "blueprint",
+  "description": "Traceable spec-driven development: plan → requirements → architecture → tasks → focused change → review → PR.",
+  "version": "0.1.0",
+  "author": {
+    "name": "adezdev"
+  }
+}
