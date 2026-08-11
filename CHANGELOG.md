@@ -45,6 +45,11 @@ The version here tracks `.claude-plugin/plugin.json`.
   is covered when every one of its criteria is, not only when its own id
   appears in a `covers:` list. The strict reading reported a failure for a
   requirement whose single criterion was covered.
+- `/blueprint:tasks` orders on shape dependencies, not only task dependencies.
+  A task frequently needs a type or helper its own component does not declare,
+  which is invisible to task-level ordering and surfaces mid-build as a stop.
+  The owning component's task goes first, or the task records that it
+  introduces the shape.
 - `/blueprint:inspect` reads declarations rather than token occurrences.
   Blueprint's documents describe Blueprint's own grammar, so `files:` and
   `status: dropped` appear inside ordinary prose; a marker counts only at the
